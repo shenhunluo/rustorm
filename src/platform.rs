@@ -3,19 +3,23 @@ use crate::{
     Database,
 };
 use cfg_if::cfg_if;
-use log::*;
 use std::{
     convert::TryFrom,
     ops::Deref,
 };
 use url::Url;
 
+
 cfg_if! {if #[cfg(feature = "with-postgres")]{
     use crate::pg::PostgresDB;
 }}
 
 cfg_if! {if #[cfg(feature = "with-sqlite")]{
-    use crate::sq::SqliteDB;
+    use crate::sqlite::SqliteDB;
+}}
+
+cfg_if! {if #[cfg(feature = "with-mysql")]{
+    use crate::my::MysqlDB;
 }}
 
 
@@ -24,6 +28,8 @@ pub enum DBPlatform {
     Postgres(Box<PostgresDB>),
     #[cfg(feature = "with-sqlite")]
     Sqlite(Box<SqliteDB>),
+    #[cfg(feature = "with-mysql")]
+    Mysql(Box<MysqlDB>),
 }
 
 impl Deref for DBPlatform {
@@ -35,10 +41,24 @@ impl Deref for DBPlatform {
             DBPlatform::Postgres(ref pg) => pg.deref(),
             #[cfg(feature = "with-sqlite")]
             DBPlatform::Sqlite(ref sq) => sq.deref(),
+            #[cfg(feature = "with-mysql")]
+            DBPlatform::Mysql(ref my) => my.deref(),
         }
     }
 }
 
+impl std::ops::DerefMut for DBPlatform {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match *self {
+            #[cfg(feature = "with-postgres")]
+            DBPlatform::Postgres(ref mut pg) => pg.deref_mut(),
+            #[cfg(feature = "with-sqlite")]
+            DBPlatform::Sqlite(ref mut sq) => sq.deref_mut(),
+            #[cfg(feature = "with-mysql")]
+            DBPlatform::Mysql(ref mut my) => my.deref_mut(),
+        }
+    }
+}
 
 pub(crate) enum Platform {
     #[cfg(feature = "with-postgres")]

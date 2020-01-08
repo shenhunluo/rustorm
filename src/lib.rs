@@ -34,7 +34,7 @@
 //!     let db_url = "sqlite://sakila.db";
 //!     #[cfg(feature = "with-postgres")]
 //!     let db_url = "postgres://postgres:p0stgr3s@localhost/sakila";
-//!     let em = pool.em(db_url).unwrap();
+//!     let mut em = pool.em(db_url).unwrap();
 //!     let sql = "SELECT * FROM actor LIMIT 10";
 //!     let actors: Result<Vec<Actor>, DbError> =
 //!         em.execute_sql_with_return(sql, &[]);
@@ -96,7 +96,7 @@
 //!     let db_url = "sqlite://sakila.db";
 //!     #[cfg(feature = "with-postgres")]
 //!     let db_url = "postgres://postgres:p0stgr3s@localhost/sakila";
-//!     let em = pool.em(db_url).unwrap();
+//!     let mut em = pool.em(db_url).unwrap();
 //!     let tom_cruise = for_insert::Actor {
 //!         first_name: "TOM".into(),
 //!         last_name: "CRUISE".to_string(),
@@ -139,7 +139,7 @@ cfg_if! {if #[cfg(feature = "with-postgres")]{
 cfg_if! {if #[cfg(feature = "with-sqlite")]{
     extern crate r2d2_sqlite;
     extern crate rusqlite;
-    mod sq;
+    mod sqlite;
 }}
 cfg_if! {if #[cfg(feature = "with-mysql")]{
     mod my;
@@ -149,12 +149,9 @@ pub mod column;
 pub mod common;
 mod dao_manager;
 mod database;
-mod database_mut;
 mod entity;
-mod entity_mut;
 pub mod error;
 mod platform;
-mod platform_mut;
 pub mod pool;
 pub mod table;
 pub mod types;
@@ -168,14 +165,12 @@ pub use database::{
     Database,
     DatabaseName,
 };
-
-pub use database_mut::DatabaseMut;
 pub use entity::EntityManager;
-pub use entity_mut::EntityManagerMut;
 pub use error::{
     DataError,
     DbError,
 };
+pub use platform::DBPlatform;
 pub use pool::Pool;
 pub use table::Table;
 
@@ -192,13 +187,13 @@ pub use rustorm_dao::{
     self,
     Array,
     ColumnName,
+    ConvertError,
     Dao,
+    FromValue,
     Rows,
     TableName,
     ToValue,
-    FromValue,
     Value,
-    ConvertError
 };
 
 /// Wrap the rustorm_dao exports to avoid name conflict with the rustorm_codegen
@@ -220,3 +215,6 @@ pub mod codegen {
         ToTableName,
     };
 }
+
+#[macro_use]
+extern crate log;
